@@ -8,7 +8,7 @@
  
  //Temperature Sensor 2
  const byte temp2Pin = A0;
- const int Temp2On = 4;
+ //const int Temp2On = 4;
  int temp2Sensor;
  float temp2SensorVolts;
  float temp2SensorUnits;
@@ -45,7 +45,7 @@
 
 
  //heater
- const byte heaterPin = D9;
+ const int heaterPin = 10;
  int failSafe = 0;
  
 
@@ -60,8 +60,11 @@ void setup() {
  pinMode(heaterPin, OUTPUT);
 
 Serial.begin(9600);
+Serial.print("New Data Run...");
+Serial.println();
 Serial.print("TIME,RH,PS,TEMP1,TEMP2,ACCX,ACCZ");
 Serial.println();
+
   
  
 }
@@ -79,13 +82,13 @@ void loop() {
   temp1Sensor = analogRead(temp1Pin);
   temp1SensorVolts = temp1Sensor*(5.0/1023);
   temp1SensorUnitsC = (temp1SensorVolts - 0.5)/(0.01);
-  temp1SensorUnits = (temp1SensorUnitsC*(9.0/5.0)+32);
+  //temp1SensorUnits = (temp1SensorUnitsC*(9.0/5.0)+32);
   
    //Temperature sensor 2
   temp2Sensor = analogRead(temp2Pin);
   temp2SensorVolts = temp2Sensor*(5.0/1023);
   temp2SensorUnitsC = (temp2SensorVolts - 0.5)/(0.01);
-  temp2SensorUnits = (temp2SensorUnitsC*(9.0/5.0)+32);
+  //temp2SensorUnits = (temp2SensorUnitsC*(9.0/5.0)+32);
   
   //Humidity Sensor
   humiditySensor = analogRead(humidityPin);
@@ -115,7 +118,7 @@ void loop() {
       analogWrite(heaterPin, 255);
       failSafe = 1;
     }
-    else if(temp1SensorUnitsC <= 40 && temp1SensorUnitsC > 30){
+  else if(temp1SensorUnitsC <= 40 && temp1SensorUnitsC > 30){
       analogWrite(heaterPin, 25);
     }
     else if(temp1SensorUnitsC <= 30 && temp1SensorUnitsC > 20){
@@ -130,10 +133,10 @@ void loop() {
     else if(temp1SensorUnitsC <=10 && temp1SensorUnitsC > 0){
       analogWrite(heaterPin, 200);
     }
-    else(temp1SensorUnitsC <= 0 && temp1SensorUnitsC > -15){
+    else if(temp1SensorUnitsC <= 0 && temp1SensorUnitsC > -15){
       analogWrite(heaterPin, 255);
     }
-  }
+ }
 
   //makes sure it wont get too hot 
   if(temp1SensorUnitsC > 50 && failSafe == 1){
@@ -142,35 +145,35 @@ void loop() {
 
   //printing 
   //Time
-  Serial.print(timeStamp);
-  Serial.print(",");
+ Serial.print(timeStamp);
+ Serial.print(",");
 
   //Humidity Sensor
   
   
-  Serial.print(humiditySensorUnits,2);
+  Serial.print(humiditySensorUnits,5);
   digitalWrite(blueHumidityOn, HIGH);
 
   //Pressure Sensor
   Serial.print(",");
-  Serial.print(pressureSensorUnits,2);
+  Serial.print(pressureSensorUnits,5);
   digitalWrite(redPressureOn, HIGH);
 
   //Temp Sensor 1
   Serial.print(",");
-  Serial.print(temp1SensorUnits,2);
+  Serial.print(temp1SensorUnitsC,5);
   digitalWrite(greenTemp1On, HIGH);
 
   //Temp Sensor 2
   Serial.print(",");
-  Serial.print(temp2SensorUnits,2);
+  Serial.print(temp2SensorUnitsC,5);
   //digitalWrite(4, HIGH);
 
   //Accelerometer
   Serial.print(",");
-  Serial.print(sensorUnitsX,3);
+  Serial.print(sensorUnitsX,5);
   Serial.print(",");
-  Serial.print(sensorUnitsZ,3);
+  Serial.print(sensorUnitsZ,5);
   digitalWrite(yellowAccelOn, HIGH);
 
   Serial.println();
