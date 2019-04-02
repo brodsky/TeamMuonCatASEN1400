@@ -1,5 +1,5 @@
  //Temperature Sensor 1
- const byte temp1Pin = A1;
+ const byte temp1Pin = A0;
  const int greenTemp1On = 5;
  int temp1Sensor;
  float temp1SensorVolts;
@@ -7,7 +7,7 @@
  float temp1SensorUnitsC; //var for units in celcius 
  
  //Temperature Sensor 2
- const byte temp2Pin = A0;
+ const byte temp2Pin = A1;
  //const int Temp2On = 4;
  int temp2Sensor;
  float temp2SensorVolts;
