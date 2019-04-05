@@ -1,0 +1,178 @@
+//this is code for one of the counters. This counter will be on pin 2 and 4. 
+int counter1SignPin = 2; 
+int counter1NoisePin = 4; 
+
+
+const double alpha = 53.032; // cpm = uSv x alpha
+
+int counter1Index = 0; //Number of loops
+char counter1Msg[256] = ""; //Message buffer for serial output
+
+int counter1SignCount = 0; //Counter for Radiation Pulse
+int counter1NoiseCount = 0; //Counter for Noise Pulse
+
+int counter1SignOn = 0; //Lock flag for Radiation Pulse
+int counter1NoiseOn = 0; //Lock flag for Noise Puls
+
+double counter1Cpm = 0; //Count rate [cpm] of current
+double counter1CpmHistory[200]; //History of count rates
+int counter1CpmIndex = 0; //Position of current count rate on cpmHistory[]
+int counter1CpmIndexPrev = 0; //Flag to prevent duplicative counting
+
+//Timing Settings for Loop Interval
+int counter1PrevTime = 0;
+int counter1CurrTime = 0;
+
+int counter1TotalSec = 0; //Elapsed time of measurement [sec]
+int counter1TotalHour = 0; //Elapsed time of measurement [hour]
+
+//Time settings for CPM calcuaration
+int counter1CpmTimeMSec = 0;
+int counter1CpmTimeSec = 0;
+int counter1CpmTimeMin = 0;
+
+//String buffers of float values for serial output
+char counter1CpmBuff[20];
+char counter1uSvBuff[20];
+char counter1uSvdBuff[20];
+
+void setup()
+{
+  //Serial setup
+  //9600bps
+  Serial.begin(9600);
+
+  //PIN setting for Radiation Pulse
+  pinMode(counter1SignPin, INPUT);
+  digitalWrite(counter1SignPin, HIGH);
+
+  //PIN setting for Noise Pulse
+  pinMode(counter1NoisePin, INPUT);
+  digitalWrite(counter1NoisePin, HIGH);
+
+  //CSV-formatting for serial output (substitute , for _)
+  Serial.println("sec[s],C1count,C1cpm,C1uSv/h,C1uSv/hError");
+
+  //Initialize cpmHistory[]
+  for (int i = 0; i < 200; i++ )
+  {
+    counter1CpmHistory[i] = 0;
+  }
+
+  //Get start time of a loop
+  counter1PrevTime = millis();
+}
+
+void loop()
+{
+  // Raw data of Radiation Pulse: Not-detected -> High, Detected -> Low
+  int counter1Sign = digitalRead(counter1SignPin);
+
+  // Raw data of Noise Pulse: Not-detected -> Low, Detected -> High
+  int counter1Noise = digitalRead(counter1NoisePin);
+
+  //Radiation Pulse normally keeps low for about 100[usec]
+  if (counter1Sign == 0 && counter1SignOn == 0){ 
+    counter1SignOn = 1;
+    counter1SignCount++;
+  } 
+  else if (counter1Sign == 1 && counter1SignOn == 1) {
+    counter1SignOn = 0;
+  }
+
+  //Noise Pulse normally keeps high for about 100[usec]
+  if (counter1Noise == 1 && counter1NoiseOn == 0)
+  { 
+    counter1NoiseOn = 1;
+    counter1NoiseCount++;
+  } else if (counter1Noise == 0 && counter1NoiseOn == 1) {
+    counter1NoiseOn = 0;
+  }
+
+  //Output readings to serial port, after 10000 loops
+  if (counter1Index == 10000) //About 160-170 msec in Arduino Nano(ATmega328)
+  {
+    //Get current time
+    counter1CurrTime = millis();
+
+    //No noise detected in 10000 loops
+    if (counter1NoiseCount == 0)
+    {
+      //Shift an array for counting log for each 6 sec.
+      if ( counter1TotalSec % 6 == 0 && counter1CpmIndexPrev != counter1TotalSec)
+      {
+        counter1CpmIndexPrev = counter1TotalSec;
+        counter1CpmIndex++;
+
+        if (counter1CpmIndex >= 200)
+        {
+          counter1CpmIndex = 0;
+        }
+
+        if (counter1CpmHistory[counter1CpmIndex] > 0)
+        {
+          counter1Cpm -= counter1CpmHistory[counter1CpmIndex];
+        }
+        counter1CpmHistory[counter1CpmIndex] = 0;
+      }
+
+      //Store count log
+      counter1CpmHistory[counter1CpmIndex] += counter1SignCount;
+      //Add number of counts
+      counter1Cpm += counter1SignCount;
+
+      //Get ready time for 10000 loops
+      counter1CpmTimeMSec += abs(counter1CurrTime - counter1PrevTime);
+      //Transform from msec. to sec. (to prevent overflow)
+      if (counter1CpmTimeMSec >= 1000){
+        counter1CpmTimeMSec -= 1000;
+        //Add measurement time to calcurate cpm readings (max=20min.)
+        if ( counter1CpmTimeSec >= 20 * 60 ){
+          counter1CpmTimeSec = 20 * 60;
+        } 
+        else {
+          counter1CpmTimeSec++;
+        }
+
+        //Total measurement time
+        counter1TotalSec++;
+        //Transform from sec. to hour. (to prevent overflow)
+        //if (counter1TotalSec >= 3600)
+//        {
+//          counter1TotalSec -= 3600;
+//          counter1TotalHour++;
+//        }
+      }
+
+      //Elapsed time of measurement (max=20min.)
+      double min = counter1CpmTimeSec / 60.0;
+      if (min != 0)
+      {
+        //Calculate cpm, uSv/h and error of uSv/h
+        dtostrf(counter1Cpm / min, -1, 3, counter1CpmBuff);
+        dtostrf(counter1Cpm / min / alpha, -1, 3, counter1uSvBuff);
+        dtostrf(sqrt(counter1Cpm) / min / alpha, -1, 3, counter1uSvdBuff);
+      } else {
+        //Devision by zero
+        dtostrf(0, -1, 3, counter1CpmBuff);
+        dtostrf(0, -1, 3, counter1uSvBuff);
+        dtostrf(0, -1, 3, counter1uSvdBuff);
+      }
+
+      
+      sprintf(counter1Msg, "%d.%03d,%d,%s,%s,%s",counter1TotalSec,counter1CpmTimeMSec,counter1SignCount,counter1CpmBuff,counter1uSvBuff,counter1uSvdBuff);
+
+      
+      Serial.println(counter1Msg);
+
+    }
+
+    //Initialization for next 10000 loops
+    counter1PrevTime = counter1CurrTime;
+    counter1SignCount = 0;
+    counter1NoiseCount = 0;
+    counter1Index = 0;
+  }
+  counter1Index++;
+}
+
