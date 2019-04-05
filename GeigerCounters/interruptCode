@@ -1,0 +1,61 @@
+//this code can only be used with one counter as of now
+// Averaging (logging) period in milliseconds, typically 15000-60000.   
+#define AVG_PERIOD  15000
+#define ONE_MINUTE  60000
+
+
+unsigned long counts; 
+unsigned long cpm;    
+unsigned int  mult;  p
+
+// Interrupt handler that counts raw events from Geiger Kit
+void tube_impulse(){ 
+   counts++;
+}
+
+void setup()
+{
+   counts = 0;
+   cpm = 0;
+   
+ 
+   Serial.begin(9600);
+
+
+   mult = ONE_MINUTE/AVG_PERIOD;
+ 
+   pinMode(2, INPUT);                          
+   digitalWrite(2, HIGH);       // Use internal pullup resistor
+   attachInterrupt(digitalPinToInterrupt(2), tube_impulse, FALLING);
+
+   Serial.print("Please stand by for ");
+   Serial.print(AVG_PERIOD/1000);
+   Serial.println(" sec. for first reading...");
+   Serial.println();
+   Serial.println("Counts,CPM");
+}
+
+void loop()
+{
+// Elapsed time stuff
+static unsigned long then;
+unsigned long now = millis();
+
+
+ 
+   if (now-then > AVG_PERIOD) {
+      then = now;
+      if (counts != 0) {                     
+         cpm = counts * mult;
+        
+      } 
+      
+      Serial.print(counts);
+      Serial.print(",");      
+      Serial.print(cpm);
+      Serial.println();
+      counts = 0;
+      cpm = 0;  
+   }
+   delay(100);  
+}
