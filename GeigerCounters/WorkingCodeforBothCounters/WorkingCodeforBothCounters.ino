@@ -1,10 +1,8 @@
-
-
 ///　Digital I/O PIN Settings　///
 int counter1SignPin = 2; 
 int counter1NoisePin = 4;
 
-int counter2SignPin = 6; 
+int counter2SignPin = 10; 
 int counter2NoisePin = 8; 
 
 const double alpha = 53.032; // cpm = uSv x alpha
@@ -190,6 +188,3 @@ void loop()
    
   }
 }
-
-
-
