@@ -1,19 +1,17 @@
-% This script correlates the timestamp from the GEIGERFLIGHT file with the
-% nearest pressure reading from the HANDSSFLIGHT file.
+% This script correlates the pressure from the countsVsPress file with the
+% corresponding altitude data from the standardATMValues file.
 
-startPoint=1;
-countsVsAltitude=zeros(height(GEIGERFLIGHT),2);
+countsVsAltitude=zeros(length(countsVsPress),2);
 
-for geigerIndex=1:height(GEIGERFLIGHT)
+for pressIndex=1:length(countsVsPress)
     
-    for searchBound=startPoint:height(HANDSSFLIGHT)
-        timeToCheck=HANDSSFLIGHT{searchBound,1};
+    for searchBound=1:length(standardATMValues)
+        pressToCheck=standardATMValues(searchBound,4);
         
-        if timeToCheck>=GEIGERFLIGHT{geigerIndex,1} % the time to find a match for
+        if pressToCheck<=countsVsPress(pressIndex,1) % the time to find a match for
             
             upperIndex=searchBound;
-            lowerIndex=searchBound-1;
-            startPoint=searchBound;
+            lowerIndex=searchBound+1;
             
             break;
         end
@@ -21,17 +19,18 @@ for geigerIndex=1:height(GEIGERFLIGHT)
     end
     
     
-        if abs(HANDSSFLIGHT{upperIndex,1}-GEIGERFLIGHT{geigerIndex,1})<=abs(HANDSSFLIGHT{lowerIndex,1}-GEIGERFLIGHT{geigerIndex,1})
-            countsVsAltitude(geigerIndex,1)=(HANDSSFLIGHT{upperIndex,3}); % pressure (altitude)
-            countsVsAltitude(geigerIndex,2)=(GEIGERFLIGHT{geigerIndex,8}); % muon CPM
+        if abs(standardATMValues(upperIndex,4)-countsVsPress(pressIndex,1))...
+                <=abs(standardATMValues(lowerIndex,4)-countsVsPress(pressIndex,1))
+            countsVsAltitude(pressIndex,1)=standardATMValues(upperIndex,6); % pressure (altitude)
+            countsVsAltitude(pressIndex,2)=countsVsPress(pressIndex,2); % muon CPM
         else
-            countsVsAltitude(geigerIndex,1)=(HANDSSFLIGHT{lowerIndex,3}); % pressure (altitude)
-            countsVsAltitude(geigerIndex,2)=(GEIGERFLIGHT{geigerIndex,8}); % muon CPM
+            countsVsAltitude(pressIndex,1)=standardATMValues(lowerIndex,6); % pressure (altitude)
+            countsVsAltitude(pressIndex,2)=countsVsPress(pressIndex,2); % muon CPM
         end
         
 end
 
-clear geigerIndex lowerIndex upperIndex searchBound startPoint timeToCheck
+clear pressIndex lowerIndex upperIndex searchBound startPoint pressToCheck
             
             
             
