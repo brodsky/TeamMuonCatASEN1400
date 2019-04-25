@@ -1,0 +1,8 @@
+Standard Formatting for Team Muon Cat's Graphs:
+
+scatter(x,y,80,'.')
+title('Temperature Sensors vs. Time');
+xlabel('Time (s)');
+ylabel('Temperature (F)');
+legend('Internal Temperature Data', 'External Temperature Data', 'Expected Temperature (73.4 F)', 'Internal Temperature Noise', 'External Temperature Noise');
+set(gca,'fontsize', 16, 'fontweight', 'bold');
